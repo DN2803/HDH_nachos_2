@@ -633,6 +633,108 @@ void ExceptionHandler(ExceptionType which)
                 }
                 
             }
+            case SC_Exec:
+            {
+                int name = machine->ReadRegister(4);
+                if (name == 0) {
+                    machine->WriteRegister(2, -1);
+                    return;
+                }
+                char s[FileNameMaxLen+1] = {0};
+                for (int j = 0; j < FileNameMaxLen; ++j) {
+                    int oneChar = 0;
+                    if (machine->ReadMem(name+j, 1, &oneChar) == FALSE) {
+                        machine->WriteRegister(2, -1);
+                        return;
+                    }
+                    if (oneChar == 0) break;
+                    s[j] = (char)oneChar;
+                }
+                int ret = pTab->ExecUpdate(s);
+                machine->WriteRegister(2, ret);
+                increasePC();
+                break;
+            }
+            case SC_Join:
+            {
+                int id = machine->ReadRegister(4);
+                /*join process*/
+                int ret = pTab->JoinUpdate(id);
+                machine->WriteRegister(2, ret);
+                increasePC();
+                break;
+            }
+            case SC_Exit:
+            {
+                int exitCode = machine->ReadRegister(4);
+                /*exit process*/
+                int ret = pTab->ExitUpdate(exitCode);
+                machine->WriteRegister(2, ret);
+                increasePC();
+                break;
+            }
+            case SC_CreateSemaphore:
+            {
+                int name = machine->ReadRegister(4);
+                int semval = machine->ReadRegister(5);
+                if (name == 0 || semval < 0) {
+                    machine->WriteRegister(2, -1);
+                    return;
+                }
+                char s[SEM_MAXNAMESIZE] = {0};
+                for (int i = 0; i < SEM_MAXNAMESIZE-1; ++i) {
+                    int oneChar = 0;
+                    machine->ReadMem(name+i, 1, &oneChar);
+                    if (oneChar == 0) break;
+                    s[i] = (char)oneChar;
+                }
+                /*create semaphore*/
+                int ret = semTab->Create(s, semval);
+                machine->WriteRegister(2, ret);
+                increasePC();
+                break;
+            }
+            case SC_Wait:
+            {
+                int name = machine->ReadRegister(4);
+                if (name == 0) {
+                    machine->WriteRegister(2, -1);
+                    return;
+                }
+                 
+                char s[SEM_MAXNAMESIZE] = {0};
+                for (int i = 0; i < SEM_MAXNAMESIZE-1; ++i) {
+                    int oneChar = 0;
+                    machine->ReadMem(name+i, 1, &oneChar);
+                    if (oneChar == 0) break;
+                    s[i] = (char)oneChar;
+                }
+                  
+                int ret = semTab->Wait(s);
+                machine->WriteRegister(2, ret);
+                increasePC();
+                break;
+            }
+            case SC_Signal:
+            {
+                int name = machine->ReadRegister(4);
+                if (name == 0) {
+                    machine->WriteRegister(2, -1);
+                    return;
+                }
+                char s[SEM_MAXNAMESIZE] = {0};
+                for (int i = 0; i < SEM_MAXNAMESIZE-1; ++i) {
+                    int oneChar = 0;
+                    machine->ReadMem(name+i, 1, &oneChar);
+                    if (oneChar == 0) break;
+                    s[i] = (char)oneChar;
+                }
+                /*signal semaphore*/
+                int ret = semTab->Signal(s);
+                machine->WriteRegister(2, ret);
+                increasePC();
+                break;
+            }
         }
         break;
     }

@@ -40,6 +40,9 @@
 #define SC_PrintChar    14
 #define SC_ReadString   15
 #define SC_PrintString  16
+#define SC_CreateSemaphore 17
+#define SC_Wait 18
+#define SC_Signal 19
 
 #ifndef IN_ASM
 
@@ -146,6 +149,16 @@ void PrintChar(char c);
 
 void ReadString(char* buffer, int length);
 void PrintString(char* buffer);
+typedef int SpaceID;
+
+SpaceID ExecProc(char* name);
+int JoinProc(SpaceID id);
+int ExitProc(int exitCode);
+int CreateSemaphore(char* name, int semval);
+int Wait(char* name);
+int Signal(char* name);
+
+
 
 #endif /* IN_ASM */
 
