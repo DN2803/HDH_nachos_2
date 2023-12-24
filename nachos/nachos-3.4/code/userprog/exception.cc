@@ -24,6 +24,8 @@
 #include "copyright.h"
 #include "system.h"
 #include "syscall.h"
+
+#define MaxFileLength 32
 //----------------------------------------------------------------------
 // ExceptionHandler
 // 	Entry point into the Nachos kernel.  Called when a user program
@@ -162,7 +164,7 @@ void ExceptionHandler(ExceptionType which)
                 DEBUG('a', "\n Shutdown, initiated by user program"); 
                 printf ("\n\n Shutdown, initiated by user program"); 
                 interrupt->Halt(); 
-                break; 
+                return; 
 
             //System call đọc 1 số nguyên
             case SC_ReadInt: 
@@ -381,6 +383,255 @@ void ExceptionHandler(ExceptionType which)
                 delete buf;
                 increasePC();
                 break;
+            }
+
+            // System call tạo file
+            case SC_CreateFile:
+		    {
+                // Input: Địa chỉ từ vùng nhớ user của tên file
+                // Output: -1 = Lỗi, 0 = Thành công
+                // Chức năng: Tạo ra file với tham số là tên file
+                int virtAddr;
+                char* filename;
+                DEBUG('a', "\n SC_CreateFile call ...");
+                DEBUG('a', "\n Reading virtual address of filename");
+                
+                // Đọc địa chỉ của file từ thanh ghi r4
+                virtAddr = machine->ReadRegister(4); 
+                DEBUG('a', "\n Reading filename.");
+                
+                // Sao chép không gian bộ nhớ User sang System, với độ dài max: 32 + 1 = 33 bytes
+                filename = User2System(virtAddr, MaxFileLength + 1);
+                if (strlen(filename) == 0)
+                {
+                    printf("\n File name is not valid");
+                    DEBUG('a', "\n File name is not valid");
+                    machine->WriteRegister(2, -1); //Return -1 vào thanh ghi r2
+                    increasePC();
+                    break;
+                }
+                
+                if (filename == NULL)  // Trường hợp không đọc được
+                {
+                    printf("\n Not enough memory in system");
+                    DEBUG('a', "\n Not enough memory in system");
+                    machine->WriteRegister(2, -1); //Return -1 vào thanh ghi r2
+                    delete filename;
+                    increasePC();                    
+                    break;
+                }
+                DEBUG('a', "\n Finished reading filename");
+                
+                if (!fileSystem->Create(filename, 0)) // Tạo file bằng hàm Create của fileSystem, tra ve ket qua
+                {
+                    // Thất bại
+                    printf("\n Error create file '%s'", filename);
+                    machine->WriteRegister(2, -1);
+                    delete filename;
+                    increasePC();
+                    break;
+                }
+                
+                // Thành công
+                machine->WriteRegister(2, 0);
+                delete filename;
+                increasePC();
+                break;
+            }
+
+            case SC_Open:
+            {
+                int virtAddr = machine->ReadRegister(4); 
+                int type = machine->ReadRegister(5); 
+                char* filename;
+                filename = User2System(virtAddr, MaxFileLength); // Copy chuoi tu vung nho User Space sang System Space voi bo dem name dai MaxFileLength
+                
+                int freeSlot = fileSystem->FindFreeSlot(); //Tìm kiếm slot trống
+
+                if (freeSlot != -1) // Xử lý khi còn slot trống
+                {
+                    if (type == 0 || type == 1) // Chỉ xử lý khi type = 0 hoặc 1
+                    {
+
+                        if ((fileSystem->openf[freeSlot] = fileSystem->Open(filename, type)) != NULL) //Mo file thanh cong
+                        {
+                            machine->WriteRegister(2, freeSlot); //tra ve OpenFileID
+                        }
+                    }
+                    else if (type == 2) // Xử lý stdin, type quy ước là 2
+                    {
+                        machine->WriteRegister(2, 0); // Trả về OpenFileID
+                    }
+                    else if (type == 3) // Xử lý stdout, type quy ước là 3
+                    {
+                        machine->WriteRegister(2, 1); // Trả về OpenFileID
+                    }
+                    else
+                    {
+                        machine->WriteRegister(2, -1); // Báo lỗi khi type không hợp lệ
+                    }
+                    increasePC();
+                    delete[] filename;
+                    break;
+                }
+                
+                machine->WriteRegister(2, -1); // Không mở được file, return -1
+                increasePC();                
+                delete[] filename;
+                break;
+            }
+
+            case SC_Close:
+            {
+                // Input: id của file(OpenFileID)
+                // Output: 0: thành công, -1 thất bại
+                int fid = machine->ReadRegister(4); // Lấy id của file
+                if (fid >= 0 && fid <= 9) // xử lý khi fid nằm trong [0, 14]
+                {
+                    if (fileSystem->openf[fid]) // Thành công
+                    {
+                        delete fileSystem->openf[fid]; // Xóa vùng nhớ lưu trữ file
+                        fileSystem->openf[fid] = NULL; // Gán vùng nhớ cho NULL
+                        machine->WriteRegister(2, 0);
+                        break;
+                    }
+                }
+                machine->WriteRegister(2, -1);
+                increasePC();
+                break;
+            }
+
+            case SC_Read:
+            {
+                int virtAddr = machine->ReadRegister(4); // Địa chỉ của tham số buffer
+                int charcount = machine->ReadRegister(5); // Kích thước
+                int id = machine->ReadRegister(6); // ID của file 
+                int OldPos;
+                int NewPos;
+                char *buf;
+
+                // Kiểm tra ID của file truyền vào có nằm ngoài bảng mô tả file hay không
+                if (id < 0 || id > 9)
+                {
+                    printf("\nFile's ID is not valid!.");
+                    machine->WriteRegister(2, -1);
+                    increasePC();
+                    return;
+                }
+                // Kiểm tra file có tồn tại hay không
+                if (fileSystem->openf[id] == NULL)
+                {
+                    printf("\nFile doesn't exist!");
+                    machine->WriteRegister(2, -1);
+                    increasePC();
+                    return;
+                }
+                // Trường hợp đọc file stdout thì trả về -1 (quy ước type là 3)
+                if (fileSystem->openf[id]->type == 3) 
+                {
+                    printf("\n[Stdout] file cannot be read!");
+                    machine->WriteRegister(2, -1);
+                    increasePC();
+                    return;
+                }
+
+                OldPos = fileSystem->openf[id]->GetCurrentPos(); // Kiểm tra thành công thì lấy vị trí OldPos
+                buf = User2System(virtAddr, charcount);
+                // Xét trường hợp đọc file stdin
+                if (fileSystem->openf[id]->type == 2)
+                {
+                    // Sử dụng hàm Read của lớp SynchConsole để trả về số byte thật sự đọc được
+                    int size = synchcons->Read(buf, charcount); 
+                    System2User(virtAddr, size, buf); 
+                    machine->WriteRegister(2, size); // Trả về số byte thực sự đọc được
+                    delete[] buf;
+                    increasePC();
+                    return;
+                }
+                // Trường hợp đọc file bình thường
+                if ((fileSystem->openf[id]->Read(buf, charcount)) > 0)
+                {
+                    // Số byte thật sự = NewPos - OldPos
+                    NewPos = fileSystem->openf[id]->GetCurrentPos();
+
+                    System2User(virtAddr, NewPos - OldPos, buf); 
+                    machine->WriteRegister(2, NewPos - OldPos);
+                }
+                else
+                {
+                    // Đọc file có nội dung là NULL
+                    machine->WriteRegister(2, -2);
+                }
+                delete[] buf;
+                increasePC();
+                return;
+            }
+            case SC_Write:
+            {
+                int virtAddr = machine->ReadRegister(4); // Địa chỉ của tham số buffer
+                int charcount = machine->ReadRegister(5); // Kích thước
+                int id = machine->ReadRegister(6); // ID của file
+                int OldPos;
+                int NewPos;
+                char *buf;
+                // Kiểm tra ID của file
+                if (id < 0 || id > 9)
+                {
+                    printf("\nFile's ID is not valid");
+                    machine->WriteRegister(2, -1);
+                    increasePC();
+                    return;
+                }
+                // File có tồn tại hay không
+                if (fileSystem->openf[id] == NULL)
+                {
+                    printf("\nFile does not exist!");
+                    machine->WriteRegister(2, -1);
+                    increasePC();
+                    return;
+                }
+                // Trường hợp ghi file stdin hoặc file read-only
+                if (fileSystem->openf[id]->type == 1 || fileSystem->openf[id]->type == 2)
+                {
+                    printf("\nCannot write on stdin file or read-only file!");
+                    machine->WriteRegister(2, -1);
+                    increasePC();
+                    return;
+                }
+
+                // Trường hợp ghi file stdout
+                if (fileSystem->openf[id]->type == 3) 
+                {
+                    int i = 0;
+                    while (buf[i] != 0 && buf[i] != '\n')
+                    {
+                        synchcons->Write(buf + i, 1); // Hàm Write của lớp SynchConsole
+                        i++;
+                    }
+                    buf[i] = '\n';
+                    synchcons->Write(buf + i, 1); // Write ký tự \n
+                    machine->WriteRegister(2, i - 1); // Trả về số byte thực sự write được
+                    delete[] buf;
+                    increasePC();
+                    return;
+                }
+                
+                OldPos = fileSystem->openf[id]->GetCurrentPos(); // Thành công thì lấy vị trí OldPos
+                buf = User2System(virtAddr, charcount);
+                // Trường hợp ghi file read & write
+                if (fileSystem->openf[id]->type == 0)
+                {
+                    if ((fileSystem->openf[id]->Write(buf, charcount)) != 0)
+                    {
+                        // Số byte thực sự = NewPos - OldPos
+                        NewPos = fileSystem->openf[id]->GetCurrentPos();
+                        machine->WriteRegister(2, NewPos - OldPos);
+                        delete[] buf;
+                        increasePC();
+                        return;
+                    }
+                }
+                
             }
         }
         break;
