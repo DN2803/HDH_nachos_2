@@ -43,6 +43,14 @@
 // All rights reserved.  See copyright.h for copyright notice and limitation 
 // of liability and disclaimer of warranty provisions.
 
+
+
+
+
+
+
+
+
 #include "copyright.h"
 
 #include "disk.h"
@@ -141,6 +149,7 @@ FileSystem::FileSystem(bool format)
         directoryFile = new OpenFile(DirectorySector);
     }
 
+
     openf = new OpenFile*[10];
 	index = 0;
 	for (int i = 0; i < 10; ++i)
@@ -237,6 +246,7 @@ FileSystem::Create(char *name, int initialSize)
 
 OpenFile *FileSystem::Open(char *name)
 { 
+
     Directory *directory = new Directory(NumDirEntries);
     OpenFile *openFile = NULL;
     int sector;
@@ -264,6 +274,7 @@ OpenFile* FileSystem::Open(char *name, int type)
 	if (sector >= 0)
 		openf[freeSlot] = new OpenFile(sector, type);	// name was found in directory 
 	delete directory;
+    
 	return openf[freeSlot];				// return NULL if not found
 }
 

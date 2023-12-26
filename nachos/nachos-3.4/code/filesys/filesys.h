@@ -44,10 +44,14 @@ typedef int OpenFileID;
 				// calls to UNIX, until the real file system
 				// implementation is available
 	
+
+
+
 class FileSystem {
 	public:
     	OpenFile** openf;
 		int index;
+
 
     	FileSystem(bool format) 
 		{
@@ -62,6 +66,8 @@ class FileSystem {
 			openf[index++] = this->Open("stdin", 2);
 			openf[index++] = this->Open("stdout", 3);  
 		}
+
+
 
 		~FileSystem() {
 			for (int i = 0; i < 10; ++i)

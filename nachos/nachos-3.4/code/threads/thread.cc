@@ -38,11 +38,17 @@ Thread::Thread(char* threadName)
     stackTop = NULL;
     stack = NULL;
     status = JUST_CREATED;
+
+    processID = 0;
+    exitStatus = 0;
+
+
+
 #ifdef USER_PROGRAM
     space = NULL;
+
 #endif
 }
-
 //----------------------------------------------------------------------
 // Thread::~Thread
 // 	De-allocate a thread.
@@ -83,7 +89,6 @@ Thread::~Thread()
 //	"func" is the procedure to run concurrently.
 //	"arg" is a single argument to be passed to the procedure.
 //----------------------------------------------------------------------
-
 void 
 Thread::Fork(VoidFunctionPtr func, int arg)
 {

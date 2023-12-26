@@ -635,105 +635,163 @@ void ExceptionHandler(ExceptionType which)
             }
             case SC_Exec:
             {
-                int name = machine->ReadRegister(4);
-                if (name == 0) {
+                int virtAddr;
+                virtAddr = machine->ReadRegister(4);	// doc dia chi ten chuong trinh tu thanh ghi r4
+                char* name;
+                name = User2System(virtAddr, MaxFileLength + 1); // Lay ten chuong trinh, nap vao kernel
+        
+                if(name == NULL)
+                {
+                    DEBUG('a', "\n Not enough memory in System");
+                    printf("\n Not enough memory in System");
                     machine->WriteRegister(2, -1);
+                    increasePC();
                     return;
                 }
-                char s[FileNameMaxLen+1] = {0};
-                for (int j = 0; j < FileNameMaxLen; ++j) {
-                    int oneChar = 0;
-                    if (machine->ReadMem(name+j, 1, &oneChar) == FALSE) {
-                        machine->WriteRegister(2, -1);
-                        return;
-                    }
-                    if (oneChar == 0) break;
-                    s[j] = (char)oneChar;
+                OpenFile *oFile = fileSystem->Open(name);
+                if (oFile == NULL)
+                {
+                    printf("\nExec:: Can't open this file.");
+                    machine->WriteRegister(2,-1);
+                    increasePC();
+                    return;
                 }
-                int ret = pTab->ExecUpdate(s);
-                machine->WriteRegister(2, ret);
+
+                delete oFile;
+
+                // Return child process id
+                int id = pTab->ExecUpdate(name); 
+                machine->WriteRegister(2,id);
+
+                delete[] name;	
                 increasePC();
-                break;
+                return;
             }
             case SC_Join:
             {
                 int id = machine->ReadRegister(4);
-                /*join process*/
-                int ret = pTab->JoinUpdate(id);
-                machine->WriteRegister(2, ret);
+			
+                int res = pTab->JoinUpdate(id);
+                
+                machine->WriteRegister(2, res);
                 increasePC();
                 break;
             }
             case SC_Exit:
             {
-                int exitCode = machine->ReadRegister(4);
-                /*exit process*/
-                int ret = pTab->ExitUpdate(exitCode);
-                machine->WriteRegister(2, ret);
+                int exitStatus = machine->ReadRegister(4);
+
+                if(exitStatus != 0)
+                {
+                    increasePC();
+                    return;
+                    
+                }			
+                
+                int res = pTab->ExitUpdate(exitStatus);
+                //machine->WriteRegister(2, res);
+
+                currentThread->FreeSpace();
+                currentThread->Finish();
                 increasePC();
-                break;
+                return; 
             }
             case SC_CreateSemaphore:
             {
-                int name = machine->ReadRegister(4);
+                int virtAddr = machine->ReadRegister(4);
                 int semval = machine->ReadRegister(5);
-                if (name == 0 || semval < 0) {
+
+                char *name = User2System(virtAddr, MaxFileLength + 1);
+                if(name == NULL)
+                {
+                    DEBUG('a', "\n Not enough memory in System");
+                    printf("\n Not enough memory in System");
                     machine->WriteRegister(2, -1);
+                    delete[] name;
+                    increasePC();
                     return;
                 }
-                char s[SEM_MAXNAMESIZE] = {0};
-                for (int i = 0; i < SEM_MAXNAMESIZE-1; ++i) {
-                    int oneChar = 0;
-                    machine->ReadMem(name+i, 1, &oneChar);
-                    if (oneChar == 0) break;
-                    s[i] = (char)oneChar;
+                
+                int res = semTab->Create(name, semval);
+
+                if(res == -1)
+                {
+                    DEBUG('a', "\n Khong the khoi tao semaphore");
+                    printf("\n Khong the khoi tao semaphore");
+                    machine->WriteRegister(2, -1);
+                    delete[] name;
+                    increasePC();
+                    return;				
                 }
-                /*create semaphore*/
-                int ret = semTab->Create(s, semval);
-                machine->WriteRegister(2, ret);
+                
+                delete[] name;
+                machine->WriteRegister(2, res);
                 increasePC();
-                break;
+                return;
             }
             case SC_Wait:
             {
-                int name = machine->ReadRegister(4);
-                if (name == 0) {
+                int virtAddr = machine->ReadRegister(4);
+
+                char *name = User2System(virtAddr, MaxFileLength + 1);
+                if(name == NULL)
+                {
+                    DEBUG('a', "\n Not enough memory in System");
+                    printf("\n Not enough memory in System");
                     machine->WriteRegister(2, -1);
+                    delete[] name;
+                    increasePC();
                     return;
                 }
-                 
-                char s[SEM_MAXNAMESIZE] = {0};
-                for (int i = 0; i < SEM_MAXNAMESIZE-1; ++i) {
-                    int oneChar = 0;
-                    machine->ReadMem(name+i, 1, &oneChar);
-                    if (oneChar == 0) break;
-                    s[i] = (char)oneChar;
+                
+                int res = semTab->Wait(name);
+
+                if(res == -1)
+                {
+                    DEBUG('a', "\n Khong ton tai ten semaphore nay!");
+                    printf("\n Khong ton tai ten semaphore nay!");
+                    machine->WriteRegister(2, -1);
+                    delete[] name;
+                    increasePC();
+                    return;				
                 }
-                  
-                int ret = semTab->Wait(s);
-                machine->WriteRegister(2, ret);
+                
+                delete[] name;
+                machine->WriteRegister(2, res);
                 increasePC();
-                break;
+                return;
             }
             case SC_Signal:
             {
-                int name = machine->ReadRegister(4);
-                if (name == 0) {
+                int virtAddr = machine->ReadRegister(4);
+
+                char *name = User2System(virtAddr, MaxFileLength + 1);
+                if(name == NULL)
+                {
+                    DEBUG('a', "\n Not enough memory in System");
+                    printf("\n Not enough memory in System");
                     machine->WriteRegister(2, -1);
+                    delete[] name;
+                    increasePC();
                     return;
                 }
-                char s[SEM_MAXNAMESIZE] = {0};
-                for (int i = 0; i < SEM_MAXNAMESIZE-1; ++i) {
-                    int oneChar = 0;
-                    machine->ReadMem(name+i, 1, &oneChar);
-                    if (oneChar == 0) break;
-                    s[i] = (char)oneChar;
+                
+                int res = semTab->Signal(name);
+
+                if(res == -1)
+                {
+                    DEBUG('a', "\n Khong ton tai ten semaphore nay!");
+                    printf("\n Khong ton tai ten semaphore nay!");
+                    machine->WriteRegister(2, -1);
+                    delete[] name;
+                    increasePC();
+                    return;				
                 }
-                /*signal semaphore*/
-                int ret = semTab->Signal(s);
-                machine->WriteRegister(2, ret);
+                
+                delete[] name;
+                machine->WriteRegister(2, res);
                 increasePC();
-                break;
+                return;
             }
         }
         break;

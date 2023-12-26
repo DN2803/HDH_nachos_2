@@ -114,7 +114,7 @@ BitMap::NumClear()
     int count = 0;
 
     for (int i = 0; i < numBits; i++)
-	if (!Test(i)) count++;
+	    if (!Test(i)) count++;
     return count;
 }
 
@@ -131,8 +131,8 @@ BitMap::Print()
 {
     printf("Bitmap set:\n"); 
     for (int i = 0; i < numBits; i++)
-	if (Test(i))
-	    printf("%d, ", i);
+        if (Test(i))
+            printf("%d, ", i);
     printf("\n"); 
 }
 

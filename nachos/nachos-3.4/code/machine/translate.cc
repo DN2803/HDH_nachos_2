@@ -95,24 +95,24 @@ Machine::ReadMem(int addr, int size, int *value)
     
     exception = Translate(addr, &physicalAddress, size, FALSE);
     if (exception != NoException) {
-	machine->RaiseException(exception, addr);
-	return FALSE;
+		machine->RaiseException(exception, addr);
+		return FALSE;
     }
     switch (size) {
       case 1:
-	data = machine->mainMemory[physicalAddress];
-	*value = data;
-	break;
+		data = machine->mainMemory[physicalAddress];
+		*value = data;
+		break;
 	
       case 2:
-	data = *(unsigned short *) &machine->mainMemory[physicalAddress];
-	*value = ShortToHost(data);
-	break;
+		data = *(unsigned short *) &machine->mainMemory[physicalAddress];
+		*value = ShortToHost(data);
+		break;
 	
       case 4:
-	data = *(unsigned int *) &machine->mainMemory[physicalAddress];
-	*value = WordToHost(data);
-	break;
+		data = *(unsigned int *) &machine->mainMemory[physicalAddress];
+		*value = WordToHost(data);
+		break;
 
       default: ASSERT(FALSE);
     }
@@ -149,20 +149,20 @@ Machine::WriteMem(int addr, int size, int value)
     }
     switch (size) {
       case 1:
-	machine->mainMemory[physicalAddress] = (unsigned char) (value & 0xff);
-	break;
+		machine->mainMemory[physicalAddress] = (unsigned char) (value & 0xff);
+		break;
 
       case 2:
-	*(unsigned short *) &machine->mainMemory[physicalAddress]
-		= ShortToMachine((unsigned short) (value & 0xffff));
-	break;
+		*(unsigned short *) &machine->mainMemory[physicalAddress]
+			= ShortToMachine((unsigned short) (value & 0xffff));
+		break;
       
       case 4:
-	*(unsigned int *) &machine->mainMemory[physicalAddress]
-		= WordToMachine((unsigned int) value);
-	break;
+		*(unsigned int *) &machine->mainMemory[physicalAddress]
+			= WordToMachine((unsigned int) value);
+		break;
 	
-      default: ASSERT(FALSE);
+      	default: ASSERT(FALSE);
     }
     
     return TRUE;
