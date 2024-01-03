@@ -37,7 +37,7 @@ extern Timer *timer;				// the hardware alarm clock
 #include "synchcons.h"
 #include "synch.h"
 extern Machine* machine;	// user program memory and registers
-extern SynchConsole* synchcons;
+extern SynchConsole* gSynchConsole;
 
 extern Semaphore *addrLock;	// semaphore
 extern BitMap *gPhysPageBitMap;	// quan ly cac frame

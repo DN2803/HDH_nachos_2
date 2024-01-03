@@ -16,7 +16,7 @@
 // of liability and disclaimer of warranty provisions.
 
 #include "copyright.h"
-#include "system.h"
+#include "system.h"		
 #include "addrspace.h"
 #include "noff.h"
 
@@ -46,6 +46,8 @@ SwapHeader (NoffHeader *noffH)
 	noffH->uninitData.inFileAddr = WordToHost(noffH->uninitData.inFileAddr);
 }
 
+//Semaphore* AddrSpace::addrLock = new Semaphore("addrLock",1);
+
 //----------------------------------------------------------------------
 // AddrSpace::AddrSpace
 // 	Create an address space to run a user program.
@@ -61,17 +63,15 @@ SwapHeader (NoffHeader *noffH)
 //	"executable" is the file containing the object code to load into memory
 //----------------------------------------------------------------------
 
-
-
 AddrSpace::AddrSpace(OpenFile *executable)
 {
-    
     NoffHeader noffH;
     unsigned int i, size;
 
-    if (executable)
+    if (executable == NULL)
     {
-        return;
+    	printf("Unable to open file %s\n");
+	    return ;
     }
 
     executable->ReadAt((char *)&noffH, sizeof(noffH), 0);
@@ -79,18 +79,18 @@ AddrSpace::AddrSpace(OpenFile *executable)
     	SwapHeader(&noffH);
 
     ASSERT(noffH.noffMagic == NOFFMAGIC);
-
+  
     addrLock->P();
 
-// how big is address space?
+    // how big is address space?
     size = noffH.code.size + noffH.initData.size + noffH.uninitData.size 
 			+ UserStackSize;	// we need to increase the size
 						// to leave room for the stack
     numPages = divRoundUp(size, PageSize);
     size = numPages * PageSize;
-
-
-
+  
+    // Check we're not trying to run anything too big
+    // At least until we have virtual memory
     ASSERT(numPages <= NumPhysPages);
 
     if(numPages > gPhysPageBitMap->NumClear())
@@ -104,41 +104,40 @@ AddrSpace::AddrSpace(OpenFile *executable)
 
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
-// first, set up the translation 
+    
+    // first, set up the translation 
     pageTable = new TranslationEntry[numPages];
-    for (i = 0; i < numPages; i++) 
+    for (i = 0; i < numPages; i++)
     {
-        
-        
-        pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-        
-        pageTable[i].physicalPage = i;
-        
-        pageTable[i].valid = TRUE;
-        pageTable[i].use = FALSE;
-        pageTable[i].dirty = FALSE;
-        pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
-                        // a separate page, we could set its 
-                        // pages to be read-only
+	// for now, virtual page # = phys page #
+	pageTable[i].virtualPage = i;
+
+	pageTable[i].physicalPage = gPhysPageBitMap->Find();
+
+	pageTable[i].valid = TRUE;
+	pageTable[i].use = FALSE;
+	pageTable[i].dirty = FALSE;
+	pageTable[i].readOnly = FALSE;  // if the code segment was entirely on 
+					// a separate page, we could set its 
+					// pages to be read-only
     }
     
-    addrLock->V();
-    // zero out the entire address space, to zero the unitialized data segment and the stack segment
+     addrLock->V();
+
     if (noffH.code.size > 0)
     {
-	    for(i = 0; i < numPages ; i++)
+	for(i = 0; i < numPages ; i++)
 	        executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]) + (pageTable[i].physicalPage*PageSize),PageSize,noffH.code.inFileAddr + (i*PageSize));
     }
 
     if (noffH.initData.size > 0)
     {
-	    for(i = 0 ; i < numPages ; i++)
+	for(i = 0 ; i < numPages ; i++)
 	        executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]) + (pageTable[i].physicalPage*PageSize),PageSize, noffH.initData.inFileAddr+(i*PageSize));
-    }
+    }	
 
-
+//   delete executable;
 }
-
 
 // =========================================================================
 // Modified
@@ -222,8 +221,9 @@ AddrSpace::AddrSpace(char* filename)
 
 }
 
-
-
+// =========================================================================
+// End Modified
+// =========================================================================
 
 
 
@@ -234,12 +234,12 @@ AddrSpace::AddrSpace(char* filename)
 
 AddrSpace::~AddrSpace()
 {
-    int i;
+	int i;
 	
 	for(i = 0; i < numPages ; i++)
 		gPhysPageBitMap->Clear(pageTable[i].physicalPage);
-        
-   delete pageTable;
+
+	delete pageTable;
 }
 
 //----------------------------------------------------------------------

@@ -3,7 +3,6 @@
 #include "openfile.h"
 
 
-
 #define For(i,a,b) for (int i = (a); i < b; ++i)
 
 PTable::PTable(int size)
@@ -186,3 +185,4 @@ char* PTable::GetFileName(int id)
 {
 	return (pcb[id]->GetFileName());
 }
+

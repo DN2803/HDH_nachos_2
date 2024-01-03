@@ -1,3 +1,9 @@
+// ptable.h 
+//      Control process running include PCB table with MAX (10) element.
+//      Constructor of PTable class will create parent process on 0 position.
+//      From parent process, we will create other process by calling Exec().
+// All rights reserved.
+
 #ifndef PTABLE_H
 #define PTABLE_H
 
@@ -34,3 +40,4 @@ public:
     char* GetFileName(int id);  // Trả về tên của tiến trình
 };
 #endif // PTABLE_H
+

@@ -8,14 +8,6 @@
 #include "copyright.h"
 #include "system.h"
 
-
-
-
-
-
-
-
-
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
 
@@ -37,7 +29,7 @@ SynchDisk   *synchDisk;
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
-SynchConsole *synchcons;
+SynchConsole* gSynchConsole;
 
 Semaphore *addrLock;	// semaphore
 BitMap *gPhysPageBitMap;	// quan ly cac frame
@@ -75,7 +67,7 @@ static void
 TimerInterruptHandler(int dummy)
 {
     if (interrupt->getStatus() != IdleMode)
-	    interrupt->YieldOnReturn();
+	interrupt->YieldOnReturn();
 }
 
 //----------------------------------------------------------------------
@@ -148,7 +140,7 @@ Initialize(int argc, char **argv)
     interrupt = new Interrupt;			// start up interrupt handling
     scheduler = new Scheduler();		// initialize the ready queue
     if (randomYield)				// start the timer (if needed)
-	    timer = new Timer(TimerInterruptHandler, 0, randomYield);
+	timer = new Timer(TimerInterruptHandler, 0, randomYield);
 
     threadToBeDestroyed = NULL;
 
@@ -163,7 +155,7 @@ Initialize(int argc, char **argv)
     
 #ifdef USER_PROGRAM
     machine = new Machine(debugUserProg);	// this must come first
-    synchcons = new SynchConsole();
+    gSynchConsole = new SynchConsole();
 
     addrLock = new Semaphore("addrLock", 1);
     gPhysPageBitMap = new BitMap(256);
@@ -198,7 +190,9 @@ Cleanup()
     
 #ifdef USER_PROGRAM
     delete machine;
-    delete synchcons;
+    delete gSynchConsole;
+
+    //delete addrLock;	
 #endif
 
 #ifdef FILESYS_NEEDED

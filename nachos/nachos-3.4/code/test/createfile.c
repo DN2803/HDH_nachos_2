@@ -1,34 +1,29 @@
 #include "syscall.h"
-#include "copyright.h"
 #define MAX_LENGTH 32
 
 int main()
 {
-    // Biến lưu ID file và lưu tên của file cần tạo.
-	char filename[MAX_LENGTH];
-    int fileID;
-
-    PrintString("\n\r -PROGRAM TEST CREATE FILE- \r\n");
-
-	// Thông báo nhập xuất tên file mình sẽ tạo.
-	PrintString("Input name of file you want to create: ");
-	ReadString(filename, MAX_LENGTH);
-
-	// Lấy trạng thái/ID của file đã tạo.
-	fileID = CreateFile(filename);
-
-	// Kiểm tra xem file đã tạo xong thành công hay không.
-	if(fileID == 1)
+	int stdin;
+	char fileName[MAX_LENGTH];
+	PrintString("\n\t\t\t-----TAO FILE-----\n\n");
+	PrintString(" - Nhap ten file tu stdin (Open(stdin)): ");
+	
+	stdin = Open("stdin", 2); // Goi ham Open mo file stdin nhap vao ten file
+	if (stdin != -1)
 	{
-		PrintString("Cannot create!\n");
-		Halt();
+		int len = Read(fileName, MAX_LENGTH, stdin); // Goi ham Read doc ten file vua nhap
+		
+		if(len <= 1)
+			PrintString(" -> Ten file khong hop le!!!\n\n");
+		else
+		{
+			if (CreateFile(fileName) == 0) // Goi ham CreateFile
+			{
+				PrintString(" -> Create file thanh cong.\n\n");
+			}
+		}
+		Close(stdin); // Goi ham Close de dong stdin
 	}
-	else
-	{
-		PrintString("Create successfully\n!");
-		Halt();
-	}
-
-	PrintString("\n\r -PROGRAM TEST CREATE FILE WAS DONE- \r\n");
-	Halt();
+		
+	return 0;
 }

@@ -133,17 +133,17 @@ Yield:
 	.globl ReadInt
 	.ent ReadInt
 ReadInt:
-	addiu $2,$0,SC_ReadInt
+	addiu $2, $0, SC_ReadInt
 	syscall
-	j $31
-	.end ReadInt
+	j	$31
+	.end ReadInt 
 
 	.globl PrintInt
 	.ent PrintInt
 PrintInt:
-	addiu $2,$0,SC_PrintInt
+	addiu $2, $0, SC_PrintInt
 	syscall
-	j $31
+	j	$31
 	.end PrintInt
 
 	.globl ReadChar
@@ -151,7 +151,7 @@ PrintInt:
 ReadChar:
 	addiu $2, $0, SC_ReadChar
 	syscall
-	j $31
+	j	$31
 	.end ReadChar
 
 	.globl PrintChar
@@ -159,7 +159,7 @@ ReadChar:
 PrintChar:
 	addiu $2, $0, SC_PrintChar
 	syscall
-	j $31
+	j	$31
 	.end PrintChar
 
 	.globl ReadString
@@ -167,7 +167,7 @@ PrintChar:
 ReadString:
 	addiu $2, $0, SC_ReadString
 	syscall
-	j $31
+	j	$31
 	.end ReadString
 
 	.globl PrintString
@@ -175,12 +175,21 @@ ReadString:
 PrintString:
 	addiu $2, $0, SC_PrintString
 	syscall
-	j $31
+	j	$31
 	.end PrintString
+	
+
+	.globl Seek
+	.ent	Seek
+Seek :
+	addiu $2, $0, SC_Seek
+	syscall
+	j	$31
+	.end Seek
 
 	.globl CreateSemaphore
-	.ent CreateSemaphore
-CreateSemaphore:
+	.ent	CreateSemaphore
+CreateSemaphore :
 	addiu $2, $0, SC_CreateSemaphore
 	syscall
 	j	$31
@@ -188,7 +197,7 @@ CreateSemaphore:
 
 	.globl Wait
 	.ent	Wait
-Wait:
+Wait :
 	addiu $2, $0, SC_Wait
 	syscall
 	j	$31

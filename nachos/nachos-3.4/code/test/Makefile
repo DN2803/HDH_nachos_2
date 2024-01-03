@@ -35,7 +35,7 @@ CPP = gcc -E
 INCDIR =-I../userprog -I../threads
 CFLAGS = -G 0 -c $(INCDIR)
 
-all: halt shell matmult sort ping pong scheduler
+all: halt shell matmult sort ping pong scheduler 
 
 start.o: start.s ../userprog/syscall.h
 	$(CPP) $(CPPFLAGS) start.c > strt.s
@@ -54,59 +54,23 @@ shell: shell.o start.o
 	$(LD) $(LDFLAGS) start.o shell.o -o shell.coff
 	../bin/coff2noff shell.coff shell
 
-matmult.o: matmult.c
-	$(CC) $(CFLAGS) -c matmult.c
-matmult: matmult.o start.o
-	$(LD) $(LDFLAGS) start.o matmult.o -o matmult.coff
-	../bin/coff2noff matmult.coff matmult
-
-testingSC_int.o: testingSC_int.c
-	$(CC) $(CFLAGS) -c testingSC_int.c
-testingSC_int: testingSC_int.o start.o
-	$(LD) $(LDFLAGS) start.o testingSC_int.o -o testingSC_int.coff
-	../bin/coff2noff testingSC_int.coff testingSC_int
-
-testingSC_char.o: testingSC_char.c
-	$(CC) $(CFLAGS) -c testingSC_char.c
-testingSC_char: testingSC_char.o start.o
-	$(LD) $(LDFLAGS) start.o testingSC_char.o -o testingSC_char.coff
-	../bin/coff2noff testingSC_char.coff testingSC_char
-
-testingSC_string.o: testingSC_string.c
-	$(CC) $(CFLAGS) -c testingSC_string.c
-testingSC_string: testingSC_string.o start.o
-	$(LD) $(LDFLAGS) start.o testingSC_string.o -o testingSC_string.coff
-	../bin/coff2noff testingSC_string.coff testingSC_string
-
-help.o: help.c
-	$(CC) $(CFLAGS) -c help.c
-help: help.o help.o
-	$(LD) $(LDFLAGS) start.o help.o -o help.coff
-	../bin/coff2noff help.coff help
-
-ascii.o: ascii.c
-	$(CC) $(CFLAGS) -c ascii.c
-ascii: ascii.o start.o
-	$(LD) $(LDFLAGS) start.o ascii.o -o ascii.coff
-	../bin/coff2noff ascii.coff ascii
-
 sort.o: sort.c
 	$(CC) $(CFLAGS) -c sort.c
 sort: sort.o start.o
 	$(LD) $(LDFLAGS) start.o sort.o -o sort.coff
 	../bin/coff2noff sort.coff sort
 
+matmult.o: matmult.c
+	$(CC) $(CFLAGS) -c matmult.c
+matmult: matmult.o start.o
+	$(LD) $(LDFLAGS) start.o matmult.o -o matmult.coff
+	../bin/coff2noff matmult.coff matmult
+
 createfile.o: createfile.c
 	$(CC) $(CFLAGS) -c createfile.c
 createfile: createfile.o start.o
 	$(LD) $(LDFLAGS) start.o createfile.o -o createfile.coff
 	../bin/coff2noff createfile.coff createfile
-
-testingfile.o: testingfile.c
-	$(CC) $(CFLAGS) -c testingfile.c
-testingfile: testingfile.o start.o
-	$(LD) $(LDFLAGS) start.o testingfile.o -o testingfile.coff
-	../bin/coff2noff testingfile.coff testingfile
 
 ping.o: ping.c
 	$(CC) $(CFLAGS) -c ping.c
@@ -125,3 +89,4 @@ scheduler.o: scheduler.c
 scheduler: scheduler.o start.o
 	$(LD) $(LDFLAGS) start.o scheduler.o -o scheduler.coff
 	../bin/coff2noff scheduler.coff scheduler
+

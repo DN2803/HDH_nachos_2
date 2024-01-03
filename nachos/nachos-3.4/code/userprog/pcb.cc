@@ -1,3 +1,6 @@
+// pcb.cc, "Process Control Block"
+// All rights reserved.
+
 #include "pcb.h"
 #include "utility.h"
 #include "system.h"

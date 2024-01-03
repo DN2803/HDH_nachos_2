@@ -44,7 +44,7 @@
 #ifdef USER_PROGRAM
 #include "machine.h"
 #include "addrspace.h"
-
+//#include "fileTable.h"
 #endif
 
 #define THREAD_MIN_PRIORITY
@@ -55,11 +55,9 @@
 // For simplicity, this is just the max over all architectures.
 #define MachineStateSize 18 
 
-
 // Size of the thread's private execution stack.
 // WATCH OUT IF THIS ISN'T BIG ENOUGH!!!!!
-#define StackSize	(4 * 16384)	// in words
-
+#define StackSize (4 * 16384)	// in words
 
 // Thread state
 enum ThreadStatus { JUST_CREATED, RUNNING, READY, BLOCKED };
@@ -86,25 +84,27 @@ class Thread {
     int machineState[MachineStateSize];  // all registers except for stackTop
 
   public:
-    Thread(char* debugName);		// initialize a Thread 
-    ~Thread(); 				// deallocate a Thread
-					// NOTE -- thread being deleted
+    Thread(char* debugName);            // initialize a Thread 
+    ~Thread();                          // deallocate a Thread
+                                        // NOTE -- thread being deleted must not be running when delete is called basic thread operations
+
+    //FileTable* mTable;
     int processID;
     int exitStatus;
-    void FreeSpace() {
+    void FreeSpace(){
         if (space != 0)
             delete space;
     }
 
     void Fork(VoidFunctionPtr func, int arg); 	// Make thread run (*func)(arg)
-    void Yield();  				// Relinquish the CPU if any 
-						// other thread is runnable
-    void Sleep();  				// Put the thread to sleep and 
-						// relinquish the processor
-    void Finish();  				// The thread is done executing
+    void Yield();  				                // Relinquish the CPU if any 
+                						// other thread is runnable
+    void Sleep();  				        // Put the thread to sleep and 
+						                // relinquish the processor
+    void Finish();  				    // The thread is done executing
     
-    void CheckOverflow();   			// Check if thread has 
-						// overflowed its stack
+    void CheckOverflow();               // Check if thread has 
+        						        // overflowed its stack
     void setStatus(ThreadStatus st) { status = st; }
     char* getName() { return (name); }
     void Print() { printf("%s, ", name); }
